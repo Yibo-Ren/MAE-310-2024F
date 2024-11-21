@@ -1,9 +1,10 @@
 clear all; clc; % clean the memory and screen
 
 % Problem definition
-f = @(x) -20*x.^3; % f(x) is the source
-g = 1.0;           % u    = g  at x = 1
-h = 0.0;           % -u,x = h  at x = 0
+f = @(x) -20*x.^3;         % f(x) is the source
+g = 1.0;                   % u    = g  at x = 1
+h = 0.0;                   % -u,x = h  at x = 0
+u = @(x) x^5+(1-x)*h+g+1;  % u(x)
 
 % Setup the mesh
 pp   = 1;              % polynomial degree
@@ -35,13 +36,14 @@ ID(end) = 0;
 K = zeros(n_eq, n_eq);
 F = zeros(n_eq, 1);
 
+
 % Assembly of the stiffness matrix and load vector
 for ee = 1 : n_el
   k_ele = zeros(n_en, n_en); % allocate a zero element stiffness matrix
   f_ele = zeros(n_en, 1);    % allocate a zero element load vector
 
   x_ele = x_coor(IEN(ee,:)); % x_ele(aa) = x_coor(A) with A = IEN(aa, ee)
-
+  
   % quadrature loop
   for qua = 1 : n_int    
     dx_dxi = 0.0;
@@ -85,7 +87,30 @@ d_temp = K \ F;
 
 disp = [d_temp; g];
 
+dd = [d_temp;g];
+e_L2_upper = 0;
+e_L2_lower = 0;
+e_H1_upper = 0;
+e_H1_lower = 0;
 
+for ee = 1:n_el
+    x_ele = x_coor(IEN(ee,:));
+    u_h = 0;
+   for qua = 1 : n_int 
+       dx_dxi = 0.0;
+       x_l = 0.0;
+       for aa = 1 : n_en
+           x_l    = x_l    + x_ele(aa) * PolyShape(pp, aa, xi(qua), 0);
+           dx_dxi = dx_dxi + x_ele(aa) * PolyShape(pp, aa, xi(qua), 1);
+       end
+       dxi_dx = 1.0 / dx_dxi;
+       
+   for aa = 1 : n_en
+       u_h = u_h +  dd(ee) * PolyShape(pp,aa,xi(qua),0)  + dd(ee+1) * PolyShape(pp, aa, xi(qua), 0);
+   end
+   f_1_upper = @(qua) (u_h-u(x_l))^2;
+   end
+end
 
 
 
