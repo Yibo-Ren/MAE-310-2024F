@@ -17,8 +17,8 @@ n_int     = n_int_xi * n_int_eta;
 
 % mesh generation
 n_en   = 4;               % number of nodes in an element
-n_el_x = 60;               % number of elements in x-dir
-n_el_y = 60;               % number of elements in y-dir
+n_el_x = 120;               % number of elements in x-dir
+n_el_y = 120;               % number of elements in y-dir
 n_el   = n_el_x * n_el_y; % total number of elements
 
 n_np_x = n_el_x + 1;      % number of nodal points in x-dir
@@ -151,5 +151,52 @@ end
 % save the solution vector and number of elements to disp with name
 % HEAT.mat
 save("HEAT", "disp", "n_el_x", "n_el_y");
+
+
+%error calculate
+
+e0 = 0 ;
+
+for ee = 1 : n_el
+  x_ele = x_coor( IEN(ee, 1:n_en) );
+  y_ele = y_coor( IEN(ee, 1:n_en) );
+  
+  k_ele = zeros(n_en, n_en); % element stiffness matrix
+  f_ele = zeros(n_en, 1);    % element load vector
+  u_h = 0;
+
+  for ll = 1 : n_int
+    x_l = 0.0; y_l = 0.0;
+    dx_dxi = 0.0; dx_deta = 0.0;
+    dy_dxi = 0.0; dy_deta = 0.0;
+    for aa = 1 : n_en
+      x_l = x_l + x_ele(aa) * Quad(aa, xi(ll), eta(ll));
+      y_l = y_l + y_ele(aa) * Quad(aa, xi(ll), eta(ll));    
+      [Na_xi, Na_eta] = Quad_grad(aa,xi(ll), eta(ll));
+      dx_dxi  = dx_dxi  + x_ele(aa) * Na_xi;
+      dx_deta = dx_deta + x_ele(aa) * Na_eta;
+      dy_dxi  = dy_dxi  + y_ele(aa) * Na_xi;
+      dy_deta = dy_deta + y_ele(aa) * Na_eta;
+    end
+    
+    detJ = dx_dxi * dy_deta - dx_deta * dy_dxi;
+    
+    for aa = 1 : n_en
+      Na = Quad(aa, xi(ll), eta(ll));
+      [Na_xi, Na_eta] = Quad_grad(aa,xi(ll), eta(ll));
+      Na_x = (Na_xi * dy_deta - Na_eta * dy_dxi) / detJ;
+      Na_y = (-Na_xi * dx_deta + Na_eta * dx_dxi) / detJ;
+     u_h = u_h + disp(IEN(ee,aa)) * Quad(aa,xi(ll),eta(ll));
+      
+      
+    end % end of aa loop
+
+    e0 = e0 + weight(ll) * detJ * (exact(x_l,y_l)-u_h)^2 ;
+  end % end of quadrature loop
+end  
+
+e0_sqrt = sqrt(e0);
+
+
 
 % EOF
