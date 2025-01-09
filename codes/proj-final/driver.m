@@ -1,38 +1,42 @@
 clc;
 clear;
 
-%导入mesh文件生成网格
+run('quarter_plate.m') %导入文件获得节点坐标
 
-filename = 'quarter-plate-with-hole-quad-12112216任奕博.msh';
-fid = fopen(filename, 'r');
-if fid == -1
-    error('无法打开文件');
+% quadrature rule
+n_int_xi  = 3;
+n_int_eta = 3;
+n_int     = n_int_xi * n_int_eta;
+[xi, eta, weight] = Gauss2D(n_int_xi, n_int_eta);
+
+n_np = msh.nbNod;               %number of nodal point
+n_el = length(msh.QUADS(:,1));  %number of element
+n_en = 4;                       %number of point in an element
+
+x_coor = zeros(n_np,1);
+y_coor = x_coor;
+
+for i = 1 : n_np                %组件x，y坐标
+    x_coor(i,1) = msh.POS(i,1);
+    y_coor(i,1) = msh.POS(i,2);
 end
-
-% 读取文件内容
-line = fgetl(fid);
-while ischar(line)
-    if contains(line, '$Nodes')             % 读取节点数据
-        n_np = str2double(fgetl(fid));
-        nodes = zeros(n_np, 4);             % nodal index, x, y, z
-        for i = 1:n_np
-            nodes(i, :) = sscanf(fgetl(fid), '%d %f %f %f')';
-        end
-    elseif contains(line, '$Elements')      % 读取单元数据
-        n_el = str2double(fgetl(fid));
-        elements = cell(n_el, 1);
-        for i = 1:n_el
-            elements{i} = sscanf(fgetl(fid), '%d')';
-        end
-        disp('单元数据已读取');
+%IEN array
+IEN = zeros(n_el,n_en);
+for i = 1 : n_el
+    for ii = 1 : n_en
+        IEN(i,ii) = msh.QUADS(i,ii);
     end
-    line = fgetl(fid);
 end
-fclose(fid);
-
-% 显示结果
-disp('节点:');
-disp(nodes);
-
-disp('单元:');
-disp(elements);
+%ID array
+ID = zeros(2,n_np,1);
+counter = 1;
+for i = 1 : 2
+    for ii = 1 : n_np
+       if msh.POS(ii,i) == -1
+           ID(i,ii) = 0;
+       else
+           ID(i,ii) = counter;
+           counter = counter + 1;
+       end
+    end
+end

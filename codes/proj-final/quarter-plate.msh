@@ -2,12 +2,11 @@ $MeshFormat
 2.2 0 8
 $EndMeshFormat
 $PhysicalNames
-5
-1 8 "x_axis"
-1 9 "y_axis"
-1 10 "wall"
-1 11 "boundary"
-1 12 "hole"
+4
+1 888 "x-symmetry"
+1 999 "y-symmetry"
+1 1010 "wall"
+1 1111 "boundary"
 $EndPhysicalNames
 $Nodes
 16
